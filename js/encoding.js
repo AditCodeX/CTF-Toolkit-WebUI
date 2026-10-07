@@ -1,16 +1,27 @@
 // Encoding/Decoding tools for CTF Toolkit
 
-// Base64 Encoding/Decoding
-function base64Encode() {
+// RFC 4648 Base32 Alphabet
+const RFC4648_BASE32 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+
+// Base64 Encoding/Decoding with Base64URL and UTF-8 / Binary support
+function base64Encode(urlSafe = false) {
     const input = document.getElementById('base64Input').value;
     
     if (!input) {
-        alert('Please enter some text to encode');
+        ctfToolkit.showToast('Please enter some text to encode', 'error');
         return;
     }
     
     try {
-        const encoded = btoa(unescape(encodeURIComponent(input)));
+        const bytes = new TextEncoder().encode(input);
+        let binaryStr = '';
+        for (let i = 0; i < bytes.length; i++) {
+            binaryStr += String.fromCharCode(bytes[i]);
+        }
+        let encoded = btoa(binaryStr);
+        if (urlSafe) {
+            encoded = encoded.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+        }
         ctfToolkit.formatOutput(document.getElementById('base64Output'), encoded);
         ctfToolkit.toggleOutput('base64OutputSection', true);
     } catch (error) {
@@ -23,31 +34,135 @@ function base64Decode() {
     const input = document.getElementById('base64Input').value;
     
     if (!input) {
-        alert('Please enter a Base64 string to decode');
+        ctfToolkit.showToast('Please enter a Base64 string to decode', 'error');
         return;
     }
     
     try {
-        const decoded = decodeURIComponent(escape(atob(input)));
+        let clean = input.trim().replace(/\s/g, '').replace(/-/g, '+').replace(/_/g, '/');
+        while (clean.length % 4 !== 0) {
+            clean += '=';
+        }
+
+        const binStr = atob(clean);
+        const bytes = new Uint8Array(binStr.length);
+        for (let i = 0; i < binStr.length; i++) {
+            bytes[i] = binStr.charCodeAt(i);
+        }
+
+        let decoded;
+        try {
+            decoded = new TextDecoder('utf-8', { fatal: true }).decode(bytes);
+        } catch (e) {
+            // Binary fallback with hex preview
+            const hex = Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join(' ');
+            decoded = `[Binary Payload Detected - Hex Representation]:\n${hex}`;
+        }
+
         ctfToolkit.formatOutput(document.getElementById('base64Output'), decoded);
         ctfToolkit.toggleOutput('base64OutputSection', true);
     } catch (error) {
-        ctfToolkit.formatOutput(document.getElementById('base64Output'), 'Error decoding: Invalid Base64 string', true);
+        ctfToolkit.formatOutput(document.getElementById('base64Output'), 'Error decoding: ' + error.message, true);
         ctfToolkit.toggleOutput('base64OutputSection', true);
     }
 }
 
-// URL Encoding/Decoding
-function urlEncode() {
+// Base32 RFC 4648
+function base32Encode(textInput) {
+    const input = textInput !== undefined ? textInput : (document.getElementById('base32Input') ? document.getElementById('base32Input').value : '');
+    if (!input) {
+        if (textInput === undefined) ctfToolkit.showToast('Please enter text to encode to Base32', 'error');
+        return '';
+    }
+
+    try {
+        const bytes = new TextEncoder().encode(input);
+        let bits = 0;
+        let value = 0;
+        let output = '';
+        for (let i = 0; i < bytes.length; i++) {
+            value = (value << 8) | bytes[i];
+            bits += 8;
+            while (bits >= 5) {
+                output += RFC4648_BASE32[(value >>> (bits - 5)) & 31];
+                bits -= 5;
+            }
+        }
+        if (bits > 0) {
+            output += RFC4648_BASE32[(value << (5 - bits)) & 31];
+        }
+        while (output.length % 8 !== 0) {
+            output += '=';
+        }
+        if (textInput === undefined) {
+            ctfToolkit.formatOutput(document.getElementById('base32Output'), output);
+            ctfToolkit.toggleOutput('base32OutputSection', true);
+        }
+        return output;
+    } catch (err) {
+        if (textInput === undefined) {
+            ctfToolkit.formatOutput(document.getElementById('base32Output'), 'Error: ' + err.message, true);
+            ctfToolkit.toggleOutput('base32OutputSection', true);
+        }
+        throw err;
+    }
+}
+
+function base32Decode(textInput) {
+    const input = textInput !== undefined ? textInput : (document.getElementById('base32Input') ? document.getElementById('base32Input').value : '');
+    if (!input) {
+        if (textInput === undefined) ctfToolkit.showToast('Please enter Base32 string to decode', 'error');
+        return '';
+    }
+
+    try {
+        const clean = input.replace(/=+$/, '').toUpperCase().replace(/\s/g, '');
+        let bits = 0;
+        let value = 0;
+        const bytes = [];
+        for (let i = 0; i < clean.length; i++) {
+            const val = RFC4648_BASE32.indexOf(clean[i]);
+            if (val === -1) throw new Error('Invalid Base32 character: ' + clean[i]);
+            value = (value << 5) | val;
+            bits += 5;
+            if (bits >= 8) {
+                bytes.push((value >>> (bits - 8)) & 255);
+                bits -= 8;
+            }
+        }
+        const decoded = new TextDecoder('utf-8').decode(new Uint8Array(bytes));
+        if (textInput === undefined) {
+            ctfToolkit.formatOutput(document.getElementById('base32Output'), decoded);
+            ctfToolkit.toggleOutput('base32OutputSection', true);
+        }
+        return decoded;
+    } catch (err) {
+        if (textInput === undefined) {
+            ctfToolkit.formatOutput(document.getElementById('base32Output'), 'Error: ' + err.message, true);
+            ctfToolkit.toggleOutput('base32OutputSection', true);
+        }
+        throw err;
+    }
+}
+
+// URL Encoding/Decoding (Standard + Full WAF Bypass Encoding)
+function urlEncode(full = false) {
     const input = document.getElementById('urlInput').value;
     
     if (!input) {
-        alert('Please enter some text to encode');
+        ctfToolkit.showToast('Please enter some text to encode', 'error');
         return;
     }
     
     try {
-        const encoded = encodeURIComponent(input);
+        let encoded;
+        if (full) {
+            // Full URL encode: every character into %XX
+            const bytes = new TextEncoder().encode(input);
+            encoded = Array.from(bytes).map(b => '%' + b.toString(16).toUpperCase().padStart(2, '0')).join('');
+        } else {
+            encoded = encodeURIComponent(input);
+        }
         ctfToolkit.formatOutput(document.getElementById('urlOutput'), encoded);
         ctfToolkit.toggleOutput('urlOutputSection', true);
     } catch (error) {
@@ -60,7 +175,7 @@ function urlDecode() {
     const input = document.getElementById('urlInput').value;
     
     if (!input) {
-        alert('Please enter a URL-encoded string to decode');
+        ctfToolkit.showToast('Please enter a URL-encoded string to decode', 'error');
         return;
     }
     
@@ -79,24 +194,36 @@ function hexToAscii() {
     const input = document.getElementById('hexInput').value.trim();
     
     if (!input) {
-        alert('Please enter a hex string');
+        ctfToolkit.showToast('Please enter a hex string', 'error');
         return;
     }
     
     try {
-        // Remove spaces and common hex prefixes
-        const cleanHex = input.replace(/\s/g, '').replace(/^0x/i, '');
+        // Remove spaces, 0x, \x, and colons
+        let cleanHex = input
+            .replace(/\s+/g, '')
+            .replace(/\\x/gi, '')
+            .replace(/0x/gi, '')
+            .replace(/:/g, '');
         
-        // Check if valid hex
+        if (cleanHex.length % 2 !== 0) {
+            cleanHex = '0' + cleanHex;
+        }
+
         if (!/^[0-9A-Fa-f]*$/.test(cleanHex)) {
-            throw new Error('Invalid hex string');
+            throw new Error('Input contains non-hexadecimal characters');
         }
         
-        // Convert hex to ASCII
-        let ascii = '';
+        const bytes = new Uint8Array(cleanHex.length / 2);
         for (let i = 0; i < cleanHex.length; i += 2) {
-            const hex = cleanHex.substr(i, 2);
-            ascii += String.fromCharCode(parseInt(hex, 16));
+            bytes[i / 2] = parseInt(cleanHex.substr(i, 2), 16);
+        }
+
+        let ascii;
+        try {
+            ascii = new TextDecoder('utf-8', { fatal: true }).decode(bytes);
+        } catch (e) {
+            ascii = Array.from(bytes).map(b => (b >= 32 && b <= 126) ? String.fromCharCode(b) : '·').join('');
         }
         
         ctfToolkit.formatOutput(document.getElementById('hexOutput'), ascii);
@@ -107,23 +234,26 @@ function hexToAscii() {
     }
 }
 
-function asciiToHex() {
+function asciiToHex(format = 'spaced') {
     const input = document.getElementById('hexInput').value;
     
     if (!input) {
-        alert('Please enter some text');
+        ctfToolkit.showToast('Please enter some text', 'error');
         return;
     }
     
     try {
-        let hex = '';
-        for (let i = 0; i < input.length; i++) {
-            const hexChar = input.charCodeAt(i).toString(16).padStart(2, '0');
-            hex += hexChar;
-        }
+        const bytes = new TextEncoder().encode(input);
+        let hexArray = Array.from(bytes).map(b => b.toString(16).padStart(2, '0'));
         
-        // Format with spaces for readability
-        const formattedHex = hex.match(/.{1,2}/g).join(' ');
+        let formattedHex;
+        if (format === 'escaped') {
+            formattedHex = hexArray.map(h => '\\x' + h).join('');
+        } else if (format === 'continuous') {
+            formattedHex = hexArray.join('');
+        } else {
+            formattedHex = hexArray.join(' ');
+        }
         
         ctfToolkit.formatOutput(document.getElementById('hexOutput'), formattedHex);
         ctfToolkit.toggleOutput('hexOutputSection', true);
@@ -138,28 +268,26 @@ function binaryToText() {
     const input = document.getElementById('binaryInput').value.trim();
     
     if (!input) {
-        alert('Please enter a binary string');
+        ctfToolkit.showToast('Please enter a binary string', 'error');
         return;
     }
     
     try {
-        // Remove spaces
         const cleanBinary = input.replace(/\s/g, '');
         
-        // Check if valid binary
         if (!/^[01]*$/.test(cleanBinary)) {
-            throw new Error('Invalid binary string');
+            throw new Error('Invalid binary string (only 0 and 1 allowed)');
         }
         
-        // Convert binary to text
-        let text = '';
+        const bytes = [];
         for (let i = 0; i < cleanBinary.length; i += 8) {
             const byte = cleanBinary.substr(i, 8);
             if (byte.length === 8) {
-                text += String.fromCharCode(parseInt(byte, 2));
+                bytes.push(parseInt(byte, 2));
             }
         }
         
+        const text = new TextDecoder('utf-8').decode(new Uint8Array(bytes));
         ctfToolkit.formatOutput(document.getElementById('binaryOutput'), text);
         ctfToolkit.toggleOutput('binaryOutputSection', true);
     } catch (error) {
@@ -172,18 +300,15 @@ function textToBinary() {
     const input = document.getElementById('binaryInput').value;
     
     if (!input) {
-        alert('Please enter some text');
+        ctfToolkit.showToast('Please enter some text', 'error');
         return;
     }
     
     try {
-        let binary = '';
-        for (let i = 0; i < input.length; i++) {
-            const binaryChar = input.charCodeAt(i).toString(2).padStart(8, '0');
-            binary += binaryChar + ' ';
-        }
+        const bytes = new TextEncoder().encode(input);
+        const binary = Array.from(bytes).map(b => b.toString(2).padStart(8, '0')).join(' ');
         
-        ctfToolkit.formatOutput(document.getElementById('binaryOutput'), binary.trim());
+        ctfToolkit.formatOutput(document.getElementById('binaryOutput'), binary);
         ctfToolkit.toggleOutput('binaryOutputSection', true);
     } catch (error) {
         ctfToolkit.formatOutput(document.getElementById('binaryOutput'), 'Error converting: ' + error.message, true);
@@ -196,7 +321,7 @@ function htmlEncode() {
     const input = document.getElementById('htmlInput').value;
     
     if (!input) {
-        alert('Please enter some text to encode');
+        ctfToolkit.showToast('Please enter some text to encode', 'error');
         return;
     }
     
@@ -206,8 +331,7 @@ function htmlEncode() {
             .replace(/</g, '&lt;')
             .replace(/>/g, '&gt;')
             .replace(/"/g, '&quot;')
-            .replace(/'/g, '&#39;')
-            .replace(/\//g, '&#x2F;');
+            .replace(/'/g, '&#39;');
         
         ctfToolkit.formatOutput(document.getElementById('htmlOutput'), encoded);
         ctfToolkit.toggleOutput('htmlOutputSection', true);
@@ -221,14 +345,13 @@ function htmlDecode() {
     const input = document.getElementById('htmlInput').value;
     
     if (!input) {
-        alert('Please enter HTML-encoded text to decode');
+        ctfToolkit.showToast('Please enter HTML-encoded text to decode', 'error');
         return;
     }
     
     try {
-        const textarea = document.createElement('textarea');
-        textarea.innerHTML = input;
-        const decoded = textarea.value;
+        const doc = new DOMParser().parseFromString(input, 'text/html');
+        const decoded = doc.documentElement.textContent;
         
         ctfToolkit.formatOutput(document.getElementById('htmlOutput'), decoded);
         ctfToolkit.toggleOutput('htmlOutputSection', true);
@@ -236,4 +359,45 @@ function htmlDecode() {
         ctfToolkit.formatOutput(document.getElementById('htmlOutput'), 'Error decoding: ' + error.message, true);
         ctfToolkit.toggleOutput('htmlOutputSection', true);
     }
+}
+
+// Morse Code
+const MORSE_CODE_MAP = {
+    'A': '.-', 'B': '-...', 'C': '-.-.', 'D': '-..', 'E': '.', 'F': '..-.',
+    'G': '--.', 'H': '....', 'I': '..', 'J': '.---', 'K': '-.-', 'L': '.-..',
+    'M': '--', 'N': '-.', 'O': '---', 'P': '.--.', 'Q': '--.-', 'R': '.-.',
+    'S': '...', 'T': '-', 'U': '..-', 'V': '...-', 'W': '.--', 'X': '-..-',
+    'Y': '-.--', 'Z': '--..', '0': '-----', '1': '.----', '2': '..---',
+    '3': '...--', '4': '....-', '5': '.....', '6': '-....', '7': '--...',
+    '8': '---..', '9': '----.', ' ': '/'
+};
+
+const REVERSE_MORSE_MAP = {};
+for (const [char, morse] of Object.entries(MORSE_CODE_MAP)) {
+    REVERSE_MORSE_MAP[morse] = char;
+}
+
+function morseEncode() {
+    const input = document.getElementById('morseInput').value;
+    if (!input) {
+        ctfToolkit.showToast('Please enter text to encode to Morse code', 'error');
+        return;
+    }
+
+    const encoded = input.toUpperCase().split('').map(c => MORSE_CODE_MAP[c] || c).join(' ');
+    ctfToolkit.formatOutput(document.getElementById('morseOutput'), encoded);
+    ctfToolkit.toggleOutput('morseOutputSection', true);
+}
+
+function morseDecode() {
+    const input = document.getElementById('morseInput').value;
+    if (!input) {
+        ctfToolkit.showToast('Please enter Morse code to decode', 'error');
+        return;
+    }
+
+    const tokens = input.trim().split(/\s+/);
+    const decoded = tokens.map(t => REVERSE_MORSE_MAP[t] || (t === '/' ? ' ' : t)).join('');
+    ctfToolkit.formatOutput(document.getElementById('morseOutput'), decoded);
+    ctfToolkit.toggleOutput('morseOutputSection', true);
 }

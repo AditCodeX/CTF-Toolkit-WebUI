@@ -3,35 +3,42 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cryptography Tools - CTF Toolkit</title>
+    <title>Cryptography Tools | CTF Toolkit</title>
     <link rel="stylesheet" href="../css/style.css">
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>🔐 Cryptography Tools</h1>
-            <p>Hash generators, ciphers, and cryptographic utilities</p>
+            <div class="header-badge">
+                <span class="badge-dot"></span>
+                <span>CRYPTOGRAPHY MODULE</span>
+            </div>
+            <h1>
+                <span class="terminal-prefix">&gt;</span>
+                <span>Cryptography Tools</span>
+            </h1>
+            <p>Cryptographic hash generators, candidate analyzers, classical substitution and stream ciphers.</p>
         </header>
 
         <nav class="main-nav">
             <a href="../index.html" class="nav-item">
-                <span class="icon">🏠</span>
+                <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
                 <span>Home</span>
             </a>
             <a href="crypto.html" class="nav-item active">
-                <span class="icon">🔐</span>
+                <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
                 <span>Cryptography</span>
             </a>
             <a href="encoding.html" class="nav-item">
-                <span class="icon">🔤</span>
+                <svg viewBox="0 0 24 24"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
                 <span>Encoding</span>
             </a>
             <a href="web.html" class="nav-item">
-                <span class="icon">🌐</span>
+                <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
                 <span>Web Tools</span>
             </a>
             <a href="misc.html" class="nav-item">
-                <span class="icon">🛠️</span>
+                <svg viewBox="0 0 24 24"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path></svg>
                 <span>Miscellaneous</span>
             </a>
         </nav>
@@ -39,89 +46,222 @@
         <main>
             <!-- Hash Generator -->
             <section class="tool-section">
-                <h2>Hash Generator</h2>
+                <div class="tool-section-header">
+                    <h2>
+                        <span>Hash Generator</span>
+                        <span class="section-tag">MD5 / SHA-1 / SHA-256 / SHA-512</span>
+                    </h2>
+                </div>
                 <div class="tool-input">
-                    <label for="hashInput">Input Text:</label>
-                    <textarea id="hashInput" placeholder="Enter text to hash..."></textarea>
+                    <label for="hashInput">
+                        <span>Input Plaintext</span>
+                        <span class="input-hint">UTF-8 Byte Stream</span>
+                    </label>
+                    <textarea id="hashInput" placeholder="Enter text to calculate cryptographic hashes..."></textarea>
                 </div>
                 <div class="tool-buttons">
-                    <button class="btn" onclick="generateHashes()">Generate All Hashes</button>
-                    <button class="btn btn-secondary" onclick="ctfToolkit.clearFields('hashInput', 'hashOutput')">Clear</button>
+                    <button class="btn" onclick="generateHashes()">Generate Hashes</button>
+                    <button class="btn btn-secondary" onclick="ctfToolkit.clearFields('hashInput', 'hashOutput'); ctfToolkit.toggleOutput('hashOutputSection', false)">Clear</button>
                 </div>
                 <div id="hashOutputSection" class="output-section hidden">
-                    <h3>Hash Results:</h3>
+                    <div class="output-header">
+                        <h3>Calculated Hashes</h3>
+                        <button class="btn copy-btn btn-sm" data-target="hashOutput">
+                            <svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                            <span>Copy All</span>
+                        </button>
+                    </div>
                     <div id="hashOutput" class="output-content"></div>
-                    <button class="btn copy-btn" data-target="hashOutput">Copy All</button>
+                </div>
+            </section>
+
+            <!-- Hash Identifier -->
+            <section class="tool-section">
+                <div class="tool-section-header">
+                    <h2>
+                        <span>Hash Identifier</span>
+                        <span class="section-tag">Candidate Detection</span>
+                    </h2>
+                </div>
+                <div class="tool-input">
+                    <label for="hashIdentifyInput">
+                        <span>Hash String</span>
+                        <span class="input-hint">e.g. 5d41402abc4b2a76b9719d911017c592 or $2a$...</span>
+                    </label>
+                    <input type="text" id="hashIdentifyInput" placeholder="Paste hash here to detect algorithm candidates...">
+                </div>
+                <div class="tool-buttons">
+                    <button class="btn" onclick="identifyHashCandidates()">Identify Hash</button>
+                    <button class="btn btn-secondary" onclick="ctfToolkit.clearFields('hashIdentifyInput', 'hashIdentifyOutput'); ctfToolkit.toggleOutput('hashIdentifyOutputSection', false)">Clear</button>
+                </div>
+                <div id="hashIdentifyOutputSection" class="output-section hidden">
+                    <div class="output-header">
+                        <h3>Candidate Results</h3>
+                        <button class="btn copy-btn btn-sm" data-target="hashIdentifyOutput">
+                            <svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                            <span>Copy</span>
+                        </button>
+                    </div>
+                    <div id="hashIdentifyOutput" class="output-content"></div>
                 </div>
             </section>
 
             <!-- Caesar Cipher -->
             <section class="tool-section">
-                <h2>Caesar Cipher</h2>
-                <div class="tool-input">
-                    <label for="caesarInput">Input Text:</label>
-                    <textarea id="caesarInput" placeholder="Enter text..."></textarea>
+                <div class="tool-section-header">
+                    <h2>
+                        <span>Caesar Cipher &amp; Brute Force</span>
+                        <span class="section-tag">Shift Substitution</span>
+                    </h2>
                 </div>
                 <div class="tool-input">
-                    <label for="caesarShift">Shift Value:</label>
+                    <label for="caesarInput">Input Text</label>
+                    <textarea id="caesarInput" placeholder="Enter text to encode or decode..."></textarea>
+                </div>
+                <div class="tool-input">
+                    <label for="caesarShift">Shift Value (1-25)</label>
                     <input type="number" id="caesarShift" value="3" min="1" max="25">
                 </div>
                 <div class="tool-buttons">
                     <button class="btn" onclick="caesarEncode()">Encode</button>
                     <button class="btn" onclick="caesarDecode()">Decode</button>
-                    <button class="btn btn-secondary" onclick="ctfToolkit.clearFields('caesarInput', 'caesarOutput')">Clear</button>
+                    <button class="btn btn-secondary" onclick="caesarBruteForce()">Brute Force All 25 Shifts</button>
+                    <button class="btn btn-secondary" onclick="ctfToolkit.clearFields('caesarInput', 'caesarOutput'); ctfToolkit.toggleOutput('caesarOutputSection', false)">Clear</button>
                 </div>
                 <div id="caesarOutputSection" class="output-section hidden">
-                    <h3>Result:</h3>
+                    <div class="output-header">
+                        <h3>Result</h3>
+                        <button class="btn copy-btn btn-sm" data-target="caesarOutput">
+                            <svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                            <span>Copy</span>
+                        </button>
+                    </div>
                     <div id="caesarOutput" class="output-content"></div>
-                    <button class="btn copy-btn" data-target="caesarOutput">Copy</button>
                 </div>
             </section>
 
-            <!-- ROT13 -->
+            <!-- ROT13, ROT47, Atbash -->
             <section class="tool-section">
-                <h2>ROT13</h2>
+                <div class="tool-section-header">
+                    <h2>
+                        <span>ROT &amp; Substitution Ciphers</span>
+                        <span class="section-tag">ROT13 / ROT47 / Atbash</span>
+                    </h2>
+                </div>
                 <div class="tool-input">
-                    <label for="rot13Input">Input Text:</label>
-                    <textarea id="rot13Input" placeholder="Enter text..."></textarea>
+                    <label for="rot13Input">Input Text</label>
+                    <textarea id="rot13Input" placeholder="Enter text for ROT13, ROT47, or Atbash transformation..."></textarea>
                 </div>
                 <div class="tool-buttons">
-                    <button class="btn" onclick="rot13Transform()">Transform</button>
-                    <button class="btn btn-secondary" onclick="ctfToolkit.clearFields('rot13Input', 'rot13Output')">Clear</button>
+                    <button class="btn" onclick="rot13Transform()">ROT13</button>
+                    <button class="btn" onclick="rot47Transform()">ROT47</button>
+                    <button class="btn" onclick="atbashTransform()">Atbash (A &lt;-&gt; Z)</button>
+                    <button class="btn btn-secondary" onclick="ctfToolkit.clearFields('rot13Input', 'rot13Output', 'rot47Output', 'atbashOutput'); ctfToolkit.toggleOutput('rot13OutputSection', false); ctfToolkit.toggleOutput('rot47OutputSection', false); ctfToolkit.toggleOutput('atbashOutputSection', false)">Clear</button>
                 </div>
                 <div id="rot13OutputSection" class="output-section hidden">
-                    <h3>Result:</h3>
+                    <div class="output-header">
+                        <h3>ROT13 Output</h3>
+                        <button class="btn copy-btn btn-sm" data-target="rot13Output">
+                            <svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                            <span>Copy</span>
+                        </button>
+                    </div>
                     <div id="rot13Output" class="output-content"></div>
-                    <button class="btn copy-btn" data-target="rot13Output">Copy</button>
+                </div>
+                <div id="rot47OutputSection" class="output-section hidden">
+                    <div class="output-header">
+                        <h3>ROT47 Output</h3>
+                        <button class="btn copy-btn btn-sm" data-target="rot47Output">
+                            <svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                            <span>Copy</span>
+                        </button>
+                    </div>
+                    <div id="rot47Output" class="output-content"></div>
+                </div>
+                <div id="atbashOutputSection" class="output-section hidden">
+                    <div class="output-header">
+                        <h3>Atbash Output</h3>
+                        <button class="btn copy-btn btn-sm" data-target="atbashOutput">
+                            <svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                            <span>Copy</span>
+                        </button>
+                    </div>
+                    <div id="atbashOutput" class="output-content"></div>
                 </div>
             </section>
 
             <!-- Vigenere Cipher -->
             <section class="tool-section">
-                <h2>Vigenère Cipher</h2>
-                <div class="tool-input">
-                    <label for="vigenereInput">Input Text:</label>
-                    <textarea id="vigenereInput" placeholder="Enter text..."></textarea>
+                <div class="tool-section-header">
+                    <h2>
+                        <span>Vigenere Cipher</span>
+                        <span class="section-tag">Polyalphabetic</span>
+                    </h2>
                 </div>
                 <div class="tool-input">
-                    <label for="vigenereKey">Key:</label>
-                    <input type="text" id="vigenereKey" placeholder="Enter key...">
+                    <label for="vigenereInput">Input Text</label>
+                    <textarea id="vigenereInput" placeholder="Enter text to process..."></textarea>
+                </div>
+                <div class="tool-input">
+                    <label for="vigenereKey">Cipher Key (Letters A-Z)</label>
+                    <input type="text" id="vigenereKey" placeholder="Enter key (e.g. LEMON, SECRET)...">
                 </div>
                 <div class="tool-buttons">
                     <button class="btn" onclick="vigenereEncode()">Encode</button>
                     <button class="btn" onclick="vigenereDecode()">Decode</button>
-                    <button class="btn btn-secondary" onclick="ctfToolkit.clearFields('vigenereInput', 'vigenereKey', 'vigenereOutput')">Clear</button>
+                    <button class="btn btn-secondary" onclick="ctfToolkit.clearFields('vigenereInput', 'vigenereKey', 'vigenereOutput'); ctfToolkit.toggleOutput('vigenereOutputSection', false)">Clear</button>
                 </div>
                 <div id="vigenereOutputSection" class="output-section hidden">
-                    <h3>Result:</h3>
+                    <div class="output-header">
+                        <h3>Result</h3>
+                        <button class="btn copy-btn btn-sm" data-target="vigenereOutput">
+                            <svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                            <span>Copy</span>
+                        </button>
+                    </div>
                     <div id="vigenereOutput" class="output-content"></div>
-                    <button class="btn copy-btn" data-target="vigenereOutput">Copy</button>
+                </div>
+            </section>
+
+            <!-- XOR Stream Cipher -->
+            <section class="tool-section">
+                <div class="tool-section-header">
+                    <h2>
+                        <span>XOR Stream Cipher</span>
+                        <span class="section-tag">Multi-Byte &amp; Single-Byte Brute Force</span>
+                    </h2>
+                </div>
+                <div class="tool-input">
+                    <label for="xorInput">
+                        <span>Input Data</span>
+                        <span class="input-hint">Text or Spaced Hex Bytes (e.g. 1b 0a 3f)</span>
+                    </label>
+                    <textarea id="xorInput" placeholder="Enter text or hex bytes to XOR..."></textarea>
+                </div>
+                <div class="tool-input">
+                    <label for="xorKey">Key (String)</label>
+                    <input type="text" id="xorKey" placeholder="Enter key for standard XOR...">
+                </div>
+                <div class="tool-buttons">
+                    <button class="btn" onclick="xorEncryptDecrypt()">XOR with Key</button>
+                    <button class="btn btn-secondary" onclick="xorBruteForceSingleByte()">Single-Byte Brute Force (0x00 - 0xFF)</button>
+                    <button class="btn btn-secondary" onclick="ctfToolkit.clearFields('xorInput', 'xorKey', 'xorOutput'); ctfToolkit.toggleOutput('xorOutputSection', false)">Clear</button>
+                </div>
+                <div id="xorOutputSection" class="output-section hidden">
+                    <div class="output-header">
+                        <h3>XOR Result</h3>
+                        <button class="btn copy-btn btn-sm" data-target="xorOutput">
+                            <svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                            <span>Copy</span>
+                        </button>
+                    </div>
+                    <div id="xorOutput" class="output-content"></div>
                 </div>
             </section>
         </main>
 
         <footer>
-            <p>CTF Toolkit v1.0 | Made by AditSinX for CTF enthusiasts</p>
+            <p>CTF Toolkit v2.0 | Engineered for security researchers and CTF competitors.</p>
         </footer>
     </div>
 

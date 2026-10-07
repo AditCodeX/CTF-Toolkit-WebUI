@@ -3,95 +3,128 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CTF Toolkit</title>
+    <title>CTF Toolkit | Security & Exploitation Web Utilities</title>
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>🚩 CTF Toolkit</h1>
-            <p>Your all-in-one toolkit for Capture The Flag competitions</p>
+            <div class="header-badge">
+                <span class="badge-dot"></span>
+                <span>SYSTEM ACTIVE • READY</span>
+            </div>
+            <h1>
+                <span class="terminal-prefix">&gt;</span>
+                <span>CTF Toolkit</span>
+            </h1>
+            <p>High performance offline utilities for Capture The Flag security competitions.</p>
         </header>
 
         <nav class="main-nav">
             <a href="index.html" class="nav-item active">
-                <span class="icon">🏠</span>
+                <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
                 <span>Home</span>
             </a>
             <a href="pages/crypto.html" class="nav-item">
-                <span class="icon">🔐</span>
+                <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
                 <span>Cryptography</span>
             </a>
             <a href="pages/encoding.html" class="nav-item">
-                <span class="icon">🔤</span>
+                <svg viewBox="0 0 24 24"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
                 <span>Encoding</span>
             </a>
             <a href="pages/web.html" class="nav-item">
-                <span class="icon">🌐</span>
+                <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
                 <span>Web Tools</span>
             </a>
             <a href="pages/misc.html" class="nav-item">
-                <span class="icon">🛠️</span>
+                <svg viewBox="0 0 24 24"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path></svg>
                 <span>Miscellaneous</span>
             </a>
         </nav>
 
         <main class="home-content">
-            <section class="welcome">
-                <h2>Welcome to CTF Toolkit</h2>
-                <p>This toolkit provides essential tools for CTF competitions, including cryptography, encoding/decoding, web exploitation, and utility tools.</p>
-            </section>
-
             <div class="tool-categories">
                 <div class="category-card">
-                    <h3>🔐 Cryptography</h3>
-                    <ul>
-                        <li>Hash Generators (MD5, SHA1, SHA256, SHA512)</li>
-                        <li>Caesar Cipher</li>
-                        <li>ROT13</li>
-                        <li>Vigenere Cipher</li>
-                    </ul>
-                    <a href="pages/crypto.html" class="btn">Go to Crypto Tools</a>
+                    <div>
+                        <div class="category-header">
+                            <div class="category-icon">
+                                <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                            </div>
+                            <h3>Cryptography</h3>
+                        </div>
+                        <ul>
+                            <li>MD5, SHA-1, SHA-256, SHA-384, SHA-512</li>
+                            <li>Hash Candidate Identifier</li>
+                            <li>Caesar Cipher with 25-Shift Brute Force</li>
+                            <li>ROT13, ROT47, Atbash Substitution</li>
+                            <li>Vigenere &amp; XOR Stream Cipher</li>
+                        </ul>
+                    </div>
+                    <a href="pages/crypto.html" class="btn">Launch Crypto Tools</a>
                 </div>
 
                 <div class="category-card">
-                    <h3>🔤 Encoding/Decoding</h3>
-                    <ul>
-                        <li>Base64 Encoder/Decoder</li>
-                        <li>URL Encoder/Decoder</li>
-                        <li>Hex to ASCII</li>
-                        <li>Binary to Text</li>
-                        <li>HTML Entities</li>
-                    </ul>
-                    <a href="pages/encoding.html" class="btn">Go to Encoding Tools</a>
+                    <div>
+                        <div class="category-header">
+                            <div class="category-icon">
+                                <svg viewBox="0 0 24 24"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+                            </div>
+                            <h3>Encoding</h3>
+                        </div>
+                        <ul>
+                            <li>Base64 &amp; Base64URL Safe Converter</li>
+                            <li>RFC 4648 Base32 Encoder / Decoder</li>
+                            <li>Full &amp; Standard URL Encoding</li>
+                            <li>Hex &lt;-&gt; ASCII with Prefix Sanitization</li>
+                            <li>Binary Conversion &amp; Morse Code</li>
+                        </ul>
+                    </div>
+                    <a href="pages/encoding.html" class="btn">Launch Encoding Tools</a>
                 </div>
 
                 <div class="category-card">
-                    <h3>🌐 Web Tools</h3>
-                    <ul>
-                        <li>JWT Decoder</li>
-                        <li>Cookie Parser</li>
-                        <li>HTTP Headers Analyzer</li>
-                        <li>SQL Injection Cheat Sheet</li>
-                    </ul>
-                    <a href="pages/web.html" class="btn">Go to Web Tools</a>
+                    <div>
+                        <div class="category-header">
+                            <div class="category-icon">
+                                <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+                            </div>
+                            <h3>Web Security</h3>
+                        </div>
+                        <ul>
+                            <li>RFC 7519 JWT Decoder &amp; Timestamp Parser</li>
+                            <li>JWT None-Algorithm Forger Bypass</li>
+                            <li>Cookie Parser with Nested Decoders</li>
+                            <li>HTTP Security Header Analyzer</li>
+                            <li>Reverse Shell Generator &amp; Cheat Sheets</li>
+                        </ul>
+                    </div>
+                    <a href="pages/web.html" class="btn">Launch Web Tools</a>
                 </div>
 
                 <div class="category-card">
-                    <h3>🛠️ Miscellaneous</h3>
-                    <ul>
-                        <li>Text Case Converter</li>
-                        <li>Reverse Text</li>
-                        <li>Character/Word Counter</li>
-                        <li>ASCII Table</li>
-                    </ul>
-                    <a href="pages/misc.html" class="btn">Go to Misc Tools</a>
+                    <div>
+                        <div class="category-header">
+                            <div class="category-icon">
+                                <svg viewBox="0 0 24 24"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path></svg>
+                            </div>
+                            <h3>Forensics &amp; Misc</h3>
+                        </div>
+                        <ul>
+                            <li>File Magic Bytes / Header Detector</li>
+                            <li>Automated CTF Flag Pattern Extractor</li>
+                            <li>Text Case Converter (camel, snake, kebab)</li>
+                            <li>Word, Line &amp; UTF-8 Byte Counter</li>
+                            <li>Interactive Searchable ASCII Table</li>
+                        </ul>
+                    </div>
+                    <a href="pages/misc.html" class="btn">Launch Misc Tools</a>
                 </div>
             </div>
         </main>
 
         <footer>
-            <p>CTF Toolkit v1.0 | Made by AditSinX for CTF enthusiasts</p>
+            <p>CTF Toolkit v2.0 | Engineered for security researchers and CTF competitors.</p>
         </footer>
     </div>
 

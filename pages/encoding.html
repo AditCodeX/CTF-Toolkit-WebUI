@@ -3,138 +3,262 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Encoding Tools - CTF Toolkit</title>
+    <title>Encoding Tools | CTF Toolkit</title>
     <link rel="stylesheet" href="../css/style.css">
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>🔤 Encoding/Decoding Tools</h1>
-            <p>Convert between different encoding formats</p>
+            <div class="header-badge">
+                <span class="badge-dot"></span>
+                <span>ENCODING MODULE</span>
+            </div>
+            <h1>
+                <span class="terminal-prefix">&gt;</span>
+                <span>Encoding &amp; Decoding Tools</span>
+            </h1>
+            <p>Convert data representations across Base64, Base32, URL, Hex, Binary, HTML, and Morse.</p>
         </header>
 
         <nav class="main-nav">
             <a href="../index.html" class="nav-item">
-                <span class="icon">🏠</span>
+                <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
                 <span>Home</span>
             </a>
             <a href="crypto.html" class="nav-item">
-                <span class="icon">🔐</span>
+                <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
                 <span>Cryptography</span>
             </a>
             <a href="encoding.html" class="nav-item active">
-                <span class="icon">🔤</span>
+                <svg viewBox="0 0 24 24"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
                 <span>Encoding</span>
             </a>
             <a href="web.html" class="nav-item">
-                <span class="icon">🌐</span>
+                <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
                 <span>Web Tools</span>
             </a>
             <a href="misc.html" class="nav-item">
-                <span class="icon">🛠️</span>
+                <svg viewBox="0 0 24 24"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path></svg>
                 <span>Miscellaneous</span>
             </a>
         </nav>
 
         <main>
-            <!-- Base64 -->
+            <!-- Base64 & Base64URL -->
             <section class="tool-section">
-                <h2>Base64 Encoder/Decoder</h2>
+                <div class="tool-section-header">
+                    <h2>
+                        <span>Base64 &amp; Base64URL</span>
+                        <span class="section-tag">RFC 4648</span>
+                    </h2>
+                </div>
                 <div class="tool-input">
-                    <label for="base64Input">Input:</label>
-                    <textarea id="base64Input" placeholder="Enter text or Base64 string..."></textarea>
+                    <label for="base64Input">Input Text or Base64</label>
+                    <textarea id="base64Input" placeholder="Enter text or Base64 string to convert..."></textarea>
                 </div>
                 <div class="tool-buttons">
-                    <button class="btn" onclick="base64Encode()">Encode</button>
+                    <button class="btn" onclick="base64Encode(false)">Encode (Standard)</button>
+                    <button class="btn" onclick="base64Encode(true)">Encode (Base64URL)</button>
                     <button class="btn" onclick="base64Decode()">Decode</button>
-                    <button class="btn btn-secondary" onclick="ctfToolkit.clearFields('base64Input', 'base64Output')">Clear</button>
+                    <button class="btn btn-secondary" onclick="ctfToolkit.clearFields('base64Input', 'base64Output'); ctfToolkit.toggleOutput('base64OutputSection', false)">Clear</button>
                 </div>
                 <div id="base64OutputSection" class="output-section hidden">
-                    <h3>Result:</h3>
+                    <div class="output-header">
+                        <h3>Result</h3>
+                        <button class="btn copy-btn btn-sm" data-target="base64Output">
+                            <svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                            <span>Copy</span>
+                        </button>
+                    </div>
                     <div id="base64Output" class="output-content"></div>
-                    <button class="btn copy-btn" data-target="base64Output">Copy</button>
+                </div>
+            </section>
+
+            <!-- Base32 -->
+            <section class="tool-section">
+                <div class="tool-section-header">
+                    <h2>
+                        <span>Base32 Encoder / Decoder</span>
+                        <span class="section-tag">RFC 4648 Alphabet</span>
+                    </h2>
+                </div>
+                <div class="tool-input">
+                    <label for="base32Input">Input Text or Base32</label>
+                    <textarea id="base32Input" placeholder="Enter text or Base32 string..."></textarea>
+                </div>
+                <div class="tool-buttons">
+                    <button class="btn" onclick="base32Encode()">Encode Base32</button>
+                    <button class="btn" onclick="base32Decode()">Decode Base32</button>
+                    <button class="btn btn-secondary" onclick="ctfToolkit.clearFields('base32Input', 'base32Output'); ctfToolkit.toggleOutput('base32OutputSection', false)">Clear</button>
+                </div>
+                <div id="base32OutputSection" class="output-section hidden">
+                    <div class="output-header">
+                        <h3>Result</h3>
+                        <button class="btn copy-btn btn-sm" data-target="base32Output">
+                            <svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                            <span>Copy</span>
+                        </button>
+                    </div>
+                    <div id="base32Output" class="output-content"></div>
                 </div>
             </section>
 
             <!-- URL Encoding -->
             <section class="tool-section">
-                <h2>URL Encoder/Decoder</h2>
+                <div class="tool-section-header">
+                    <h2>
+                        <span>URL Encoder / Decoder</span>
+                        <span class="section-tag">Standard &amp; Full WAF Bypass</span>
+                    </h2>
+                </div>
                 <div class="tool-input">
-                    <label for="urlInput">Input:</label>
-                    <textarea id="urlInput" placeholder="Enter URL or text..."></textarea>
+                    <label for="urlInput">Input URL or String</label>
+                    <textarea id="urlInput" placeholder="Enter URL or text to encode/decode..."></textarea>
                 </div>
                 <div class="tool-buttons">
-                    <button class="btn" onclick="urlEncode()">Encode</button>
+                    <button class="btn" onclick="urlEncode(false)">Encode (Standard)</button>
+                    <button class="btn" onclick="urlEncode(true)">Full Encode (All Chars %XX)</button>
                     <button class="btn" onclick="urlDecode()">Decode</button>
-                    <button class="btn btn-secondary" onclick="ctfToolkit.clearFields('urlInput', 'urlOutput')">Clear</button>
+                    <button class="btn btn-secondary" onclick="ctfToolkit.clearFields('urlInput', 'urlOutput'); ctfToolkit.toggleOutput('urlOutputSection', false)">Clear</button>
                 </div>
                 <div id="urlOutputSection" class="output-section hidden">
-                    <h3>Result:</h3>
+                    <div class="output-header">
+                        <h3>Result</h3>
+                        <button class="btn copy-btn btn-sm" data-target="urlOutput">
+                            <svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                            <span>Copy</span>
+                        </button>
+                    </div>
                     <div id="urlOutput" class="output-content"></div>
-                    <button class="btn copy-btn" data-target="urlOutput">Copy</button>
                 </div>
             </section>
 
-            <!-- Hex to ASCII -->
+            <!-- Hex <-> ASCII -->
             <section class="tool-section">
-                <h2>Hex ↔ ASCII Converter</h2>
+                <div class="tool-section-header">
+                    <h2>
+                        <span>Hex &lt;-&gt; ASCII Converter</span>
+                        <span class="section-tag">Byte &amp; String Representation</span>
+                    </h2>
+                </div>
                 <div class="tool-input">
-                    <label for="hexInput">Input:</label>
-                    <textarea id="hexInput" placeholder="Enter hex string or ASCII text..."></textarea>
+                    <label for="hexInput">
+                        <span>Input</span>
+                        <span class="input-hint">Supports 0x, \x, spaced, or colon-separated hex</span>
+                    </label>
+                    <textarea id="hexInput" placeholder="Enter hex bytes or ASCII text..."></textarea>
                 </div>
                 <div class="tool-buttons">
-                    <button class="btn" onclick="hexToAscii()">Hex → ASCII</button>
-                    <button class="btn" onclick="asciiToHex()">ASCII → Hex</button>
-                    <button class="btn btn-secondary" onclick="ctfToolkit.clearFields('hexInput', 'hexOutput')">Clear</button>
+                    <button class="btn" onclick="hexToAscii()">Hex -&gt; ASCII</button>
+                    <button class="btn" onclick="asciiToHex('spaced')">ASCII -&gt; Hex (Spaced)</button>
+                    <button class="btn" onclick="asciiToHex('escaped')">ASCII -&gt; \x Hex</button>
+                    <button class="btn btn-secondary" onclick="ctfToolkit.clearFields('hexInput', 'hexOutput'); ctfToolkit.toggleOutput('hexOutputSection', false)">Clear</button>
                 </div>
                 <div id="hexOutputSection" class="output-section hidden">
-                    <h3>Result:</h3>
+                    <div class="output-header">
+                        <h3>Result</h3>
+                        <button class="btn copy-btn btn-sm" data-target="hexOutput">
+                            <svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                            <span>Copy</span>
+                        </button>
+                    </div>
                     <div id="hexOutput" class="output-content"></div>
-                    <button class="btn copy-btn" data-target="hexOutput">Copy</button>
                 </div>
             </section>
 
-            <!-- Binary to Text -->
+            <!-- Binary <-> Text -->
             <section class="tool-section">
-                <h2>Binary ↔ Text Converter</h2>
+                <div class="tool-section-header">
+                    <h2>
+                        <span>Binary &lt;-&gt; Text Converter</span>
+                        <span class="section-tag">8-Bit Bitstream</span>
+                    </h2>
+                </div>
                 <div class="tool-input">
-                    <label for="binaryInput">Input:</label>
-                    <textarea id="binaryInput" placeholder="Enter binary string or text..."></textarea>
+                    <label for="binaryInput">Input Binary Stream or Text</label>
+                    <textarea id="binaryInput" placeholder="Enter binary string (e.g. 01000001) or text..."></textarea>
                 </div>
                 <div class="tool-buttons">
-                    <button class="btn" onclick="binaryToText()">Binary → Text</button>
-                    <button class="btn" onclick="textToBinary()">Text → Binary</button>
-                    <button class="btn btn-secondary" onclick="ctfToolkit.clearFields('binaryInput', 'binaryOutput')">Clear</button>
+                    <button class="btn" onclick="binaryToText()">Binary -&gt; Text</button>
+                    <button class="btn" onclick="textToBinary()">Text -&gt; Binary</button>
+                    <button class="btn btn-secondary" onclick="ctfToolkit.clearFields('binaryInput', 'binaryOutput'); ctfToolkit.toggleOutput('binaryOutputSection', false)">Clear</button>
                 </div>
                 <div id="binaryOutputSection" class="output-section hidden">
-                    <h3>Result:</h3>
+                    <div class="output-header">
+                        <h3>Result</h3>
+                        <button class="btn copy-btn btn-sm" data-target="binaryOutput">
+                            <svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                            <span>Copy</span>
+                        </button>
+                    </div>
                     <div id="binaryOutput" class="output-content"></div>
-                    <button class="btn copy-btn" data-target="binaryOutput">Copy</button>
+                </div>
+            </section>
+
+            <!-- Morse Code -->
+            <section class="tool-section">
+                <div class="tool-section-header">
+                    <h2>
+                        <span>Morse Code Converter</span>
+                        <span class="section-tag">International Morse Code</span>
+                    </h2>
+                </div>
+                <div class="tool-input">
+                    <label for="morseInput">
+                        <span>Input Text or Morse Code</span>
+                        <span class="input-hint">Dots, dashes, spaces, and slashes for word breaks</span>
+                    </label>
+                    <textarea id="morseInput" placeholder="Enter text or Morse code (e.g. ... --- ...)..."></textarea>
+                </div>
+                <div class="tool-buttons">
+                    <button class="btn" onclick="morseEncode()">Encode to Morse</button>
+                    <button class="btn" onclick="morseDecode()">Decode Morse</button>
+                    <button class="btn btn-secondary" onclick="ctfToolkit.clearFields('morseInput', 'morseOutput'); ctfToolkit.toggleOutput('morseOutputSection', false)">Clear</button>
+                </div>
+                <div id="morseOutputSection" class="output-section hidden">
+                    <div class="output-header">
+                        <h3>Result</h3>
+                        <button class="btn copy-btn btn-sm" data-target="morseOutput">
+                            <svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                            <span>Copy</span>
+                        </button>
+                    </div>
+                    <div id="morseOutput" class="output-content"></div>
                 </div>
             </section>
 
             <!-- HTML Entities -->
             <section class="tool-section">
-                <h2>HTML Entity Encoder/Decoder</h2>
+                <div class="tool-section-header">
+                    <h2>
+                        <span>HTML Entity Encoder / Decoder</span>
+                        <span class="section-tag">DOM &amp; Special Chars</span>
+                    </h2>
+                </div>
                 <div class="tool-input">
-                    <label for="htmlInput">Input:</label>
-                    <textarea id="htmlInput" placeholder="Enter HTML or text..."></textarea>
+                    <label for="htmlInput">Input Text or HTML</label>
+                    <textarea id="htmlInput" placeholder="Enter HTML markup or text..."></textarea>
                 </div>
                 <div class="tool-buttons">
                     <button class="btn" onclick="htmlEncode()">Encode</button>
                     <button class="btn" onclick="htmlDecode()">Decode</button>
-                    <button class="btn btn-secondary" onclick="ctfToolkit.clearFields('htmlInput', 'htmlOutput')">Clear</button>
+                    <button class="btn btn-secondary" onclick="ctfToolkit.clearFields('htmlInput', 'htmlOutput'); ctfToolkit.toggleOutput('htmlOutputSection', false)">Clear</button>
                 </div>
                 <div id="htmlOutputSection" class="output-section hidden">
-                    <h3>Result:</h3>
+                    <div class="output-header">
+                        <h3>Result</h3>
+                        <button class="btn copy-btn btn-sm" data-target="htmlOutput">
+                            <svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                            <span>Copy</span>
+                        </button>
+                    </div>
                     <div id="htmlOutput" class="output-content"></div>
-                    <button class="btn copy-btn" data-target="htmlOutput">Copy</button>
                 </div>
             </section>
         </main>
 
         <footer>
-            <p>CTF Toolkit v1.0 | Made by AditSinX for CTF enthusiasts</p>
+            <p>CTF Toolkit v2.0 | Engineered for security researchers and CTF competitors.</p>
         </footer>
     </div>
 

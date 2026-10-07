@@ -5,12 +5,19 @@ function convertCase(caseType) {
     const input = document.getElementById('caseInput').value;
     
     if (!input) {
-        alert('Please enter some text to convert');
+        ctfToolkit.showToast('Please enter some text to convert', 'error');
         return;
     }
     
     let result = '';
     
+    // Split text into words handling camelCase, snake_case, kebab-case, and spaces
+    const words = input
+        .replace(/([a-z])([A-Z])/g, '$1 $2')
+        .replace(/[_\-]+/g, ' ')
+        .trim()
+        .split(/\s+/);
+
     switch (caseType) {
         case 'upper':
             result = input.toUpperCase();
@@ -19,23 +26,23 @@ function convertCase(caseType) {
             result = input.toLowerCase();
             break;
         case 'title':
-            result = input.replace(/\w\S*/g, function(txt) {
-                return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();
-            });
+            result = words
+                .map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+                .join(' ');
             break;
         case 'camel':
-            result = input
-                .replace(/(?:^\w|[A-Z]|\b\w)/g, function(word, index) {
-                    return index === 0 ? word.toLowerCase() : word.toUpperCase();
-                })
-                .replace(/\s+/g, '');
+            result = words
+                .map((w, i) => i === 0 ? w.toLowerCase() : w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+                .join('');
             break;
         case 'snake':
-            result = input
-                .replace(/\W+/g, ' ')
-                .split(/ |\B(?=[A-Z])/)
-                .map(word => word.toLowerCase())
-                .join('_');
+            result = words.map(w => w.toLowerCase()).join('_');
+            break;
+        case 'kebab':
+            result = words.map(w => w.toLowerCase()).join('-');
+            break;
+        case 'constant':
+            result = words.map(w => w.toUpperCase()).join('_');
             break;
     }
     
@@ -46,12 +53,10 @@ function convertCase(caseType) {
 // Text Reversal Functions
 function reverseText() {
     const input = document.getElementById('reverseInput').value;
-    
     if (!input) {
-        alert('Please enter some text to reverse');
+        ctfToolkit.showToast('Please enter some text to reverse', 'error');
         return;
     }
-    
     const result = input.split('').reverse().join('');
     ctfToolkit.formatOutput(document.getElementById('reverseOutput'), result);
     ctfToolkit.toggleOutput('reverseOutputSection', true);
@@ -59,12 +64,10 @@ function reverseText() {
 
 function reverseWords() {
     const input = document.getElementById('reverseInput').value;
-    
     if (!input) {
-        alert('Please enter some text to reverse');
+        ctfToolkit.showToast('Please enter some text to reverse', 'error');
         return;
     }
-    
     const result = input.split(/\s+/).reverse().join(' ');
     ctfToolkit.formatOutput(document.getElementById('reverseOutput'), result);
     ctfToolkit.toggleOutput('reverseOutputSection', true);
@@ -72,38 +75,36 @@ function reverseWords() {
 
 function reverseLines() {
     const input = document.getElementById('reverseInput').value;
-    
     if (!input) {
-        alert('Please enter some text to reverse');
+        ctfToolkit.showToast('Please enter some text to reverse', 'error');
         return;
     }
-    
     const result = input.split('\n').reverse().join('\n');
     ctfToolkit.formatOutput(document.getElementById('reverseOutput'), result);
     ctfToolkit.toggleOutput('reverseOutputSection', true);
 }
 
-// Character/Word Counter
+// Character/Word Counter with UTF-8 byte measurement
 function updateCounter() {
     const input = document.getElementById('counterInput').value;
     
-    // Character count
     document.getElementById('charCount').textContent = input.length;
-    
-    // Character count without spaces
     document.getElementById('charCountNoSpace').textContent = input.replace(/\s/g, '').length;
     
-    // Word count
     const words = input.trim().split(/\s+/).filter(word => word.length > 0);
     document.getElementById('wordCount').textContent = words.length;
     
-    // Line count
-    const lines = input.split('\n');
-    document.getElementById('lineCount').textContent = lines.length;
+    const lines = input.length === 0 ? 0 : input.split('\n').length;
+    document.getElementById('lineCount').textContent = lines;
     
-    // Paragraph count (separated by double newlines)
     const paragraphs = input.split(/\n\s*\n/).filter(para => para.trim().length > 0);
     document.getElementById('paragraphCount').textContent = paragraphs.length;
+
+    const byteLength = new TextEncoder().encode(input).length;
+    const byteEl = document.getElementById('byteCount');
+    if (byteEl) {
+        byteEl.textContent = byteLength;
+    }
 }
 
 function clearCounter() {
@@ -111,7 +112,91 @@ function clearCounter() {
     updateCounter();
 }
 
-// ASCII Table
+// File Magic Bytes / Header Signature Identifier
+const FILE_SIGNATURES = [
+    { name: 'PNG Image', hex: '89504E470D0A1A0A', ext: '.png', desc: 'Portable Network Graphics' },
+    { name: 'JPEG Image', hex: 'FFD8FF', ext: '.jpg / .jpeg', desc: 'Joint Photographic Experts Group' },
+    { name: 'GIF87a Image', hex: '474946383761', ext: '.gif', desc: 'Graphics Interchange Format 87a' },
+    { name: 'GIF89a Image', hex: '474946383961', ext: '.gif', desc: 'Graphics Interchange Format 89a' },
+    { name: 'ZIP / DOCX / APK', hex: '504B0304', ext: '.zip / .docx / .apk', desc: 'ZIP Archive or OpenXML file' },
+    { name: 'ZIP Empty Archive', hex: '504B0506', ext: '.zip', desc: 'Empty ZIP Archive' },
+    { name: 'PDF Document', hex: '25504446', ext: '.pdf', desc: 'Adobe Portable Document Format' },
+    { name: 'Linux ELF Executable', hex: '7F454C46', ext: '.elf / binary', desc: 'Executable and Linkable Format' },
+    { name: 'Windows PE (EXE / DLL)', hex: '4D5A', ext: '.exe / .dll', desc: 'DOS MZ / Portable Executable' },
+    { name: 'Wireshark PCAP (Big-Endian)', hex: 'A1B2C3D4', ext: '.pcap', desc: 'Libpcap Packet Capture' },
+    { name: 'Wireshark PCAP (Little-Endian)', hex: 'D4C3B2A1', ext: '.pcap', desc: 'Libpcap Packet Capture' },
+    { name: 'Wireshark PCAPNG', hex: '0A0D0D0A', ext: '.pcapng', desc: 'Pcap-NG Capture File' },
+    { name: '7-Zip Archive', hex: '377ABCAF271C', ext: '.7z', desc: '7-Zip Compressed File' },
+    { name: 'GZIP Compressed File', hex: '1F8B08', ext: '.gz', desc: 'GNU Zip Archive' },
+    { name: 'BZIP2 Compressed File', hex: '425A68', ext: '.bz2', desc: 'Bzip2 Compressed Archive' },
+    { name: 'TAR Archive', hex: '7573746172', ext: '.tar', desc: 'POSIX Tar Archive (ustar)' },
+    { name: 'SQLite 3 Database', hex: '53514C69746520666F726D61742033', ext: '.db / .sqlite', desc: 'SQLite 3 Format' },
+    { name: 'Java Class File', hex: 'CAFEBABE', ext: '.class', desc: 'Compiled Java Bytecode' },
+    { name: 'WAV Audio', hex: '52494646', ext: '.wav', desc: 'RIFF Resource File' },
+    { name: 'MP3 Audio (ID3)', hex: '494433', ext: '.mp3', desc: 'MP3 with ID3v2 tag' }
+];
+
+function identifyMagicBytes() {
+    const input = document.getElementById('magicInput').value.trim();
+    if (!input) {
+        ctfToolkit.showToast('Please enter hex bytes to check magic signature', 'error');
+        return;
+    }
+
+    const clean = input
+        .replace(/\s+/g, '')
+        .replace(/0x/gi, '')
+        .replace(/\\x/gi, '')
+        .toUpperCase();
+
+    const matches = FILE_SIGNATURES.filter(sig => clean.startsWith(sig.hex));
+    const output = document.getElementById('magicOutput');
+
+    if (matches.length > 0) {
+        let text = 'Matching File Signatures Found:\n\n';
+        matches.forEach(m => {
+            text += `[Format]:      ${m.name} (${m.ext})\n[Magic Hex]:   ${m.hex.match(/.{1,2}/g).join(' ')}\n[Description]: ${m.desc}\n\n`;
+        });
+        ctfToolkit.formatOutput(output, text.trim());
+    } else {
+        ctfToolkit.formatOutput(output, `Input Header: ${clean.slice(0, 32)}\nNo standard file magic bytes matched. Check offset or file integrity.`, true);
+    }
+
+    ctfToolkit.toggleOutput('magicOutputSection', true);
+}
+
+// CTF Flag Extractor
+function extractFlags() {
+    const text = document.getElementById('flagExtractorInput').value;
+    const prefix = document.getElementById('flagPrefix').value.trim() || 'flag';
+
+    if (!text) {
+        ctfToolkit.showToast('Please enter text to search for flags', 'error');
+        return;
+    }
+
+    // Escape regex characters in custom prefix
+    const escapedPrefix = prefix.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const regex = new RegExp(`(?:${escapedPrefix})\\{[^\\r\\n\\}]+?\\}`, 'gi');
+    
+    const matches = text.match(regex);
+    const output = document.getElementById('flagExtractorOutput');
+
+    if (matches && matches.length > 0) {
+        const unique = [...new Set(matches)];
+        let res = `Found ${matches.length} flag(s) (${unique.length} unique):\n\n`;
+        unique.forEach((f, idx) => {
+            res += `[${idx + 1}] ${f}\n`;
+        });
+        ctfToolkit.formatOutput(output, res.trim());
+    } else {
+        ctfToolkit.formatOutput(output, `No flags matching "${prefix}{...}" pattern found in input.`, true);
+    }
+
+    ctfToolkit.toggleOutput('flagExtractorOutputSection', true);
+}
+
+// ASCII Table Reference Data
 const asciiData = {
     control: [
         { dec: 0, hex: '00', oct: '000', char: 'NUL', desc: 'Null' },
@@ -150,9 +235,9 @@ const asciiData = {
     ]
 };
 
-// Generate printable ASCII characters
+// Generate printable ASCII characters (32 - 126)
+asciiData.printable = [];
 for (let i = 32; i <= 126; i++) {
-    if (!asciiData.printable) asciiData.printable = [];
     asciiData.printable.push({
         dec: i,
         hex: i.toString(16).toUpperCase().padStart(2, '0'),
@@ -162,9 +247,9 @@ for (let i = 32; i <= 126; i++) {
     });
 }
 
-// Generate extended ASCII characters
+// Generate extended ASCII characters (128 - 255)
+asciiData.extended = [];
 for (let i = 128; i <= 255; i++) {
-    if (!asciiData.extended) asciiData.extended = [];
     asciiData.extended.push({
         dec: i,
         hex: i.toString(16).toUpperCase().padStart(2, '0'),
@@ -179,7 +264,7 @@ function getASCIIDescription(code) {
         32: 'Space',
         33: 'Exclamation mark',
         34: 'Double quotes',
-        35: 'Number sign',
+        35: 'Number sign / Hash',
         36: 'Dollar sign',
         37: 'Percent sign',
         38: 'Ampersand',
@@ -189,8 +274,8 @@ function getASCIIDescription(code) {
         42: 'Asterisk',
         43: 'Plus sign',
         44: 'Comma',
-        45: 'Hyphen',
-        46: 'Period',
+        45: 'Hyphen / Minus',
+        46: 'Period / Dot',
         47: 'Slash',
         58: 'Colon',
         59: 'Semicolon',
@@ -204,9 +289,9 @@ function getASCIIDescription(code) {
         93: 'Closing bracket',
         94: 'Caret',
         95: 'Underscore',
-        96: 'Grave accent',
+        96: 'Grave accent / Backtick',
         123: 'Opening brace',
-        124: 'Vertical bar',
+        124: 'Vertical bar / Pipe',
         125: 'Closing brace',
         126: 'Tilde'
     };
@@ -218,87 +303,85 @@ function getASCIIDescription(code) {
     return '';
 }
 
+let currentASCIIRange = 'printable';
+
 function showASCIIRange(range) {
-    const tbody = document.getElementById('asciiTableBody');
-    tbody.innerHTML = '';
-    
-    let data = [];
-    
-    switch (range) {
-        case 'control':
-            data = asciiData.control;
-            break;
-        case 'printable':
-            data = asciiData.printable;
-            break;
-        case 'extended':
-            data = asciiData.extended;
-            break;
-        case 'all':
-            data = [...asciiData.control, ...asciiData.printable, ...asciiData.extended];
-            data.sort((a, b) => a.dec - b.dec);
-            break;
-    }
-    
-    data.forEach(item => {
-        const row = document.createElement('tr');
-        row.innerHTML = `
-            <td>${item.dec}</td>
-            <td>0x${item.hex}</td>
-            <td>${item.oct}</td>
-            <td>${item.char}</td>
-            <td>${item.desc}</td>
-        `;
-        tbody.appendChild(row);
-    });
+    currentASCIIRange = range;
+    filterASCIITable();
 }
 
-// Initialize with printable characters on page load
-document.addEventListener('DOMContentLoaded', () => {
-    showASCIIRange('printable');
-});
+function filterASCIITable() {
+    const tbody = document.getElementById('asciiTableBody');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+    
+    const searchInput = document.getElementById('asciiSearchInput');
+    const query = searchInput ? searchInput.value.trim().toLowerCase() : '';
 
-// Add styles for counter stats
-const style = document.createElement('style');
-style.textContent = `
-    .counter-stats {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        gap: 1rem;
-        margin: 1rem 0;
-        padding: 1rem;
-        background-color: var(--bg-card);
-        border-radius: 6px;
-        border: 1px solid var(--border);
+    let data = [];
+    if (query) {
+        // When searching, search across all ASCII character categories
+        data = [...asciiData.control, ...asciiData.printable, ...asciiData.extended];
+        data.sort((a, b) => a.dec - b.dec);
+        data = data.filter(item => 
+            (item.dec !== undefined && item.dec.toString().includes(query)) ||
+            (item.hex && item.hex.toLowerCase().includes(query)) ||
+            (item.oct && item.oct.includes(query)) ||
+            (item.char && item.char.toLowerCase().includes(query)) ||
+            (item.desc && item.desc.toLowerCase().includes(query))
+        );
+    } else {
+        switch (currentASCIIRange) {
+            case 'control':
+                data = asciiData.control;
+                break;
+            case 'printable':
+                data = asciiData.printable;
+                break;
+            case 'extended':
+                data = asciiData.extended;
+                break;
+            case 'all':
+                data = [...asciiData.control, ...asciiData.printable, ...asciiData.extended];
+                data.sort((a, b) => a.dec - b.dec);
+                break;
+        }
     }
-    
-    .stat-item {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 0.5rem;
+
+    const fragment = document.createDocumentFragment();
+    data.forEach(item => {
+        const row = document.createElement('tr');
+        
+        const tdDec = document.createElement('td');
+        tdDec.textContent = item.dec;
+        
+        const tdHex = document.createElement('td');
+        tdHex.textContent = '0x' + item.hex;
+        
+        const tdOct = document.createElement('td');
+        tdOct.textContent = item.oct;
+        
+        const tdChar = document.createElement('td');
+        tdChar.textContent = item.char; // Safe escaping for <, >, &, etc.
+        
+        const tdDesc = document.createElement('td');
+        tdDesc.textContent = item.desc;
+        
+        row.appendChild(tdDec);
+        row.appendChild(tdHex);
+        row.appendChild(tdOct);
+        row.appendChild(tdChar);
+        row.appendChild(tdDesc);
+        
+        fragment.appendChild(row);
+    });
+
+    tbody.appendChild(fragment);
+}
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', () => {
+    if (document.getElementById('asciiTableBody')) {
+        showASCIIRange('printable');
     }
-    
-    .stat-label {
-        color: var(--text-secondary);
-    }
-    
-    .stat-value {
-        font-size: 1.2rem;
-        font-weight: bold;
-        color: var(--accent);
-    }
-    
-    .ascii-controls {
-        display: flex;
-        gap: 0.5rem;
-        margin-bottom: 1rem;
-        flex-wrap: wrap;
-    }
-    
-    #asciiTableContainer {
-        overflow-x: auto;
-        margin-top: 1rem;
-    }
-`;
-document.head.appendChild(style);
+});

